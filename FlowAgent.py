@@ -60,8 +60,8 @@ class FlowAgent(object):
 
                     # 下班
                     self.device.click_off_work()
-
                     self.device.punch(self.get_punch_off_time_hour, self.get_punch_off_time_minute)
+                    self.device.back_page()
 
                 except exceptions.NoSuchElementException:
                     print("Some element not found when %d/%d/%d" % (datetime_data['year'], datetime_data['month'], day))
