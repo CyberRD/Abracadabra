@@ -1,5 +1,6 @@
 import unittest
 import calendar
+import time
 from LocateType import LocateType
 from random import randint
 from datetime import datetime
@@ -14,7 +15,7 @@ class AbrakadabraTests(unittest.TestCase):
     START_DAY = 1
     END_YEAR = 2018
     END_MONTH = 1
-    END_DAY = 31
+    END_DAY = 15
     is_punch_view_element_cached = False
     punch_view_loc = dict()
 
@@ -77,14 +78,14 @@ class AbrakadabraTests(unittest.TestCase):
                                                  y=punch_in_btn_location[1] + 20).perform()
                     sleep(0.5)
                     # 非上班日 alert
-                    if not self.handle_alert():
+                    if not self.handle_alert(1):
                         self.punch_view_routine(self.get_punch_in_time_hour, self.get_punch_in_time_minute)
                         sleep(1)
                         # 下班
                         TouchAction(self.driver).tap(x=punch_out_btn_location[0] + 20,
                                                      y=punch_out_btn_location[1] + 20).perform()
                         self.punch_view_routine(self.get_punch_off_time_hour, self.get_punch_off_time_minute)
-                    sleep(1)
+                    sleep(0.5)
                 except exceptions.NoSuchElementException:
                     continue
             sleep(2)
@@ -113,12 +114,16 @@ class AbrakadabraTests(unittest.TestCase):
 
         return [(x.location['x'], x.location['y']) for x in all_day_btns]
 
-    def handle_alert(self):
-        try:
-            self.driver.find_element_by_accessibility_id("確定").click()
-            return True
-        except:
-            return False
+    def handle_alert(self, timeout_in_sec):
+        start = time.time()
+        while(True):
+            if(time.time() - start > timeout_in_sec):
+                break
+            try:
+                self.driver.switch_to.alert.accept()
+                continue
+            except:
+                pass
 
     def switch_calendar_to_end_month(self):
         now = datetime.now()
@@ -157,7 +162,7 @@ class AbrakadabraTests(unittest.TestCase):
         TouchAction(self.driver).tap(x=punch_btn_loc[0] + 5,
                                      y=punch_btn_loc[1] + 5).perform()
         # Alert 確定
-        self.handle_alert()
+        self.handle_alert(3)
         # 回前頁
         sleep(0.5)
         back_btn_loc = self.get_punch_view_location('back', LocateType.ACCESSIBILITY_ID, 'Back')
