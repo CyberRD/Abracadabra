@@ -96,11 +96,9 @@ class FlowAgent(object):
 
         valid_duration = []
         for year in reversed(range(start_date.year, end_date.year + 1)):
-            for month in reversed(range(1, 13)):
-                if year == end_date.year and month > end_date.month:
-                    continue
-                if year == start_date.year and month < start_date.month:
-                    break
+            start_month = start_date.month if year == start_date.year else 1
+            end_month = end_date.month if year == end_date.year else 12
+            for month in reversed(range(start_month, end_month)):
                 if year == end_date.year and month == end_date.month:
                     end_day = end_date.day
                 else:
