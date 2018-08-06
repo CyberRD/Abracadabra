@@ -1,6 +1,6 @@
 import unittest
 import calendar
-from locatetype import LocateType
+from LocateType import LocateType
 from random import randint
 from datetime import datetime
 from appium import webdriver
@@ -13,8 +13,8 @@ class AbrakadabraTests(unittest.TestCase):
     START_MONTH = 1
     START_DAY = 1
     END_YEAR = 2018
-    END_MONTH = 3
-    END_DAY = 1
+    END_MONTH = 1
+    END_DAY = 31
     is_punch_view_element_cached = False
     punch_view_loc = dict()
 
