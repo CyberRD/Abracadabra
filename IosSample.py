@@ -12,10 +12,10 @@ from selenium.common import exceptions
 class AbrakadabraTests(unittest.TestCase):
     START_YEAR = 2018 # TODO: Should read start and end date from config and parse them separately
     START_MONTH = 1
-    START_DAY = 1
+    START_DAY = 6
     END_YEAR = 2018
     END_MONTH = 1
-    END_DAY = 15
+    END_DAY = 8
     is_punch_view_element_cached = False
     punch_view_loc = dict()
 
@@ -78,7 +78,7 @@ class AbrakadabraTests(unittest.TestCase):
                                                  y=punch_in_btn_location[1] + 20).perform()
                     sleep(0.5)
                     # 非上班日 alert
-                    if not self.handle_alert(1):
+                    if not self.handle_alert(1.5):
                         self.punch_view_routine(self.get_punch_in_time_hour, self.get_punch_in_time_minute)
                         sleep(1)
                         # 下班
@@ -121,9 +121,10 @@ class AbrakadabraTests(unittest.TestCase):
                 break
             try:
                 self.driver.switch_to.alert.accept()
-                continue
+                return True
             except:
                 pass
+        return False
 
     def switch_calendar_to_end_month(self):
         now = datetime.now()
