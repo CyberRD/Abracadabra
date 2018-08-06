@@ -7,8 +7,8 @@ from random import randint
 
 from selenium.common import exceptions
 
-from Device.MockDevice import MockDevice as Device
 from Device.Ios import IosDevice
+from Device.Andriod import AndriodDevice
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -26,7 +26,7 @@ class FlowAgent(object):
             self.device = IosDevice()
             self._ios = True
         else:
-            self.device = Device()
+            self.device = AndriodDevice()
             self._android = True
 
     def run_daka(self):
@@ -137,11 +137,11 @@ class FlowAgent(object):
 if __name__ == '__main__':
 
     agent = FlowAgent({
-        'device': 'ios',
-        'user_name': 'Mock',
-        'user_pwd': 'mock',
-        'start_date': '2018-02-01',
-        'end_date': '2018-03-01'
+        'device': 'andriod',
+        'user_name': '',
+        'user_pwd': '',
+        'start_date': '2018-08-01',
+        'end_date': '2018-08-06'
     })
 
     agent.run_daka()
