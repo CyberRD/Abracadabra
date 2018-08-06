@@ -5,7 +5,16 @@ from appium import webdriver
 class AndriodDevice(object):
 
     def __init__(self):
-        self.driver = AndriodDriver().driver
+        self.desired_caps = {}
+        self.desired_caps['platformName'] = 'Android'
+        self.desired_caps['platformVersion'] = '7.0'
+        # desired_caps['platformVersion'] = '8.0'
+        self.desired_caps['deviceName'] = 'WUJ01N47TY'
+        # desired_caps['deviceName'] = 'CB512BKD88'
+        self.desired_caps['appPackage'] = 'com.cybersoft.had'
+        self.desired_caps['appActivity'] = 'com.cybersoft.had.activity.MainActivity'
+        self.driver = webdriver.Remote('http://localhost:4723/wd/hub', self.desired_caps)
+        self.driver.implicitly_wait(10)
 
     def launch_app(self):
         print('launch_app')
@@ -29,9 +38,13 @@ class AndriodDevice(object):
 
     def handle_non_workday_alert(self):
         print('handle_non_workday_alert')
+        ok = sel.driver.find_element_by_id('com.cybersoft.had:id/md_buttonDefaultPositive')
+        ok.click()
+
 
     def punch(self, hour, minute):
         print(hour, minute)
+        time_str = hour.zfill(2) + minute.zfill(2)
         clock = self.driver.find_element_by_id('com.cybersoft.had:id/btnClock')
         clock.click()
         clock_setting = self.driver.find_element_by_id('com.cybersoft.had:id/hours')
@@ -48,29 +61,49 @@ class AndriodDevice(object):
         ok = \
             self.driver.find_element_by_id('com.cybersoft.had:id/md_buttonDefaultPositive')
         ok.click()
-        self.back_page()
+
 
     def switch_calendar_to_last_month(self):
         print('switch_calendar_to_last_month')
+        pre_page = self.driver.find_element_by_id('com.cybersoft.had:id/ibPrev')
+        pre_page.click()
+
 
     def back_page(self):
         print('back')
         self.driver.keyevent(4)
 
 
+    def find_xpath_of_day(self, day):
+        def get_date_xpath(calender_index):
+            return \
+                '/hierarchy/android.widget.FrameLayout/android.widget.LinearLayout/android.widget.FrameLayout/android.widget.RelativeLayout/android.widget.RelativeLayout/android.widget.LinearLayout[1]/android.widget.LinearLayout/android.widget.GridView/android.widget.LinearLayout[{calender_index}]/android.widget.LinearLayout/android.widget.TextView'.format(
+                    calender_index=calender_index)
+
+        calender_index = 0
+        while True:
+            calender_index += 1
+            date_xpath = get_date_xpath(calender_index)
+            first_day = driver.find_element_by_xpath(date_xpath)
+            if first_day.text == '1':
+                first_day_index = calender_index
+                break
+        target_day_index = first_day_index + day - 1
+        return get_date_xpath(target_day_index)
+
+    def go_to_work_page():
+        sign_in = driver.find_element_by_id('com.cybersoft.had:id/btnOn')
+        sign_in.click()
+
+
+    def get_off_work_page():
+        sign_in = driver.find_element_by_id('com.cybersoft.had:id/btnOff')
+        sign_in.click()
+
 class AndriodDriver(object):
 
     def __init__(self):
-        self.desired_caps = {}
-        self.desired_caps['platformName'] = 'Android'
-        self.desired_caps['platformVersion'] = '7.0'
-        # desired_caps['platformVersion'] = '8.0'
-        self.desired_caps['deviceName'] = 'WUJ01N47TY'
-        # desired_caps['deviceName'] = 'CB512BKD88'
-        self.desired_caps['appPackage'] = 'com.cybersoft.had'
-        self.desired_caps['appActivity'] = 'com.cybersoft.had.activity.MainActivity'
-        self.driver = webdriver.Remote('http://localhost:4723/wd/hub', self.desired_caps)
-        self.driver.implicitly_wait(10)
+        pass
 
     @classmethod
     def find_element_by_xpath(cls, path):
