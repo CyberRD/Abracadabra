@@ -1,6 +1,7 @@
 import unittest
-import os
 import calendar
+import time
+from LocateType import LocateType
 from random import randint
 from datetime import datetime
 from appium import webdriver
@@ -8,24 +9,25 @@ from time import sleep
 from appium.webdriver.common.touch_action import TouchAction
 from selenium.common import exceptions
 
-class IOSLib():
-    def setup(self):
-        print('setup')
 
 class AbrakadabraTests(unittest.TestCase):
     START_YEAR = 2018 # TODO: Should read start and end date from config and parse them separately
     START_MONTH = 1
-    START_DAY = 1
+    START_DAY = 6
     END_YEAR = 2018
-    END_MONTH = 8
-    END_DAY = 1
+    END_MONTH = 1
+    END_DAY = 8
+    is_punch_view_element_cached = False
+    punch_view_loc = dict()
 
     def setUp(self):
         # set up appium
         self.driver = webdriver.Remote(
             command_executor='http://127.0.0.1:4723/wd/hub',
-
-        self.driver.implicitly_wait(10)
+            desired_capabilities={
+                # TODO: Fill in
+            })
+        self.driver.implicitly_wait(3)
         self.valid_duration = self.handle_punch_duration_setting()
 
     def tearDown(self):
@@ -49,62 +51,88 @@ class AbrakadabraTests(unittest.TestCase):
                     continue
                 if year == self.START_YEAR and month < self.START_MONTH:
                     break
-                valid_duration.append({'year': year, 'month': month, 'day': self.compute_day_num(year, month)})
+                valid_duration.append({'year': year, 'month': month})
 
         return valid_duration
 
     def test_punch(self):
         self.driver.execute_script('mobile: launchApp', {'bundleId': 'com.cybersoft.had.iDakaApp'})
         self.driver.execute_script('mobile: activateApp', {'bundleId': 'com.cybersoft.had.iDakaApp'});
-
         # Click calendar
         self.driver.find_element_by_accessibility_id("calendar icon").click()
         sleep(2)
+        punch_in_btn_location, punch_out_btn_location = self.get_punch_btn_coordinates_in_calendar_view()
         self.switch_calendar_to_end_month()
 
         for datetime_data in self.valid_duration:
-            for day in range(1, datetime_data['day'] + 1):
-                print(datetime_data['year'], datetime_data['month'], day)
+            coordinate_of_days = self.get_all_day_btn_coordinates(datetime_data['year'], datetime_data['month'])
+            for idx, day_btn_location in enumerate(coordinate_of_days):
+                print(datetime_data['year'], datetime_data['month'], 'idx: %d' % idx)
                 try:
                     # Choose date
-                    self.driver.find_element_by_xpath(
-                        '//XCUIElementTypeStaticText[@name="%d"]' % day).click()
-                    # 上班
-                    self.driver.find_element_by_xpath(
-                        '//XCUIElementTypeOther[@name="calendar"]/following-sibling::XCUIElementTypeButton[1]').click()
-                    # 非上班日 alert
+                    print('Coordinate: %d %d' % (day_btn_location[0], day_btn_location[1]))
+                    TouchAction(self.driver).tap(x=day_btn_location[0]+20,
+                                                 y=day_btn_location[1]+20).perform()
                     sleep(0.5)
-                    self.handle_non_workday_alert()
-
-                    self.punch(self.get_punch_in_time_hour, self.get_punch_in_time_minute)
-                    # 下班
-                    self.driver.find_element_by_xpath(
-                        '//XCUIElementTypeOther[@name="calendar"]/following-sibling::XCUIElementTypeButton[2]').click()
-
-                    self.punch(self.get_punch_off_time_hour, self.get_punch_off_time_minute)
+                    # 上班
+                    TouchAction(self.driver).tap(x=punch_in_btn_location[0] + 20,
+                                                 y=punch_in_btn_location[1] + 20).perform()
+                    sleep(0.5)
+                    # 非上班日 alert
+                    if not self.handle_alert(1.5):
+                        self.punch_view_routine(self.get_punch_in_time_hour, self.get_punch_in_time_minute)
+                        sleep(1)
+                        # 下班
+                        TouchAction(self.driver).tap(x=punch_out_btn_location[0] + 20,
+                                                     y=punch_out_btn_location[1] + 20).perform()
+                        self.punch_view_routine(self.get_punch_off_time_hour, self.get_punch_off_time_minute)
+                    sleep(0.5)
                 except exceptions.NoSuchElementException:
-                    print("Some element not found when %d/%d/%d" % (datetime_data['year'], datetime_data['month'], day))
-
+                    continue
             sleep(2)
-            self.switch_calendar_to_last_month()
+            self.switch_calendar_to_previous_month()
 
-    def handle_non_workday_alert(self):
-        try:
-            self.driver.switch_to.alert.accept()
-        except:
-            return
+    def get_punch_btn_coordinates_in_calendar_view(self):
+        punch_in_btn = self.driver.find_element_by_xpath(
+            '//XCUIElementTypeOther[@name="calendar"]/following-sibling::XCUIElementTypeButton[1]')
+        punch_out_btn = self.driver.find_element_by_xpath(
+            '//XCUIElementTypeOther[@name="calendar"]/following-sibling::XCUIElementTypeButton[2]')
+        return (punch_in_btn.location['x'], punch_in_btn.location['y']), (punch_out_btn.location['x'], punch_out_btn.location['y'])
+
+    def get_all_day_btn_coordinates(self, year, month):
+        all_day_btns = self.driver.find_elements_by_xpath(
+            '//XCUIElementTypeOther[@name="calendar"]/XCUIElementTypeOther[2]/XCUIElementTypeOther[4]/XCUIElementTypeCollectionView/descendant::XCUIElementTypeStaticText[string-length(@name) > 0]'
+        )
+
+        start_idx = 0
+        end_idx = calendar.monthrange(year, month)[1] - 1
+
+        if year == self.START_YEAR and month == self.START_MONTH:
+            start_idx = self.START_DAY - 1
+        if year == self.END_YEAR and month == self.END_MONTH:
+            end_idx = self.END_DAY
+        all_day_btns = all_day_btns[start_idx:end_idx]
+
+        return [(x.location['x'], x.location['y']) for x in all_day_btns]
+
+    def handle_alert(self, timeout_in_sec):
+        start = time.time()
+        while(True):
+            if(time.time() - start > timeout_in_sec):
+                break
+            try:
+                self.driver.switch_to.alert.accept()
+                return True
+            except:
+                pass
+        return False
 
     def switch_calendar_to_end_month(self):
         now = datetime.now()
         for i in range(1, now.month - self.END_MONTH + 1):
             TouchAction(self.driver).press(x=74, y=320).wait(100).move_to(x=290, y=319).release().perform()
 
-    def compute_day_num(self, year, month):
-        if month == self.END_MONTH:
-            return self.END_DAY
-        return calendar.monthrange(year, month)[1]
-
-    def switch_calendar_to_last_month(self):
+    def switch_calendar_to_previous_month(self):
         TouchAction(self.driver).press(x=74, y=320).wait(100).move_to(x=290, y=319).release().perform()
 
     def parse_date_field(self, date_field_value):
@@ -113,25 +141,46 @@ class AbrakadabraTests(unittest.TestCase):
         year = date[1]
         return year, month
 
-    def punch(self, get_time_func_hour, get_time_func_min):
-        time_field = self.driver.find_element_by_xpath('//XCUIElementTypeTextField[2]')
-        time_field.click()
+    def punch_view_routine(self, get_time_func_hour, get_time_func_min):
+        # 點選時間
+        sleep(0.5)
+        clock_field_loc = self.get_punch_view_location('clock', LocateType.XPATH, '//XCUIElementTypeTextField[2]')
+        TouchAction(self.driver).tap(x=clock_field_loc[0] + 10,
+                                     y=clock_field_loc[1] + 10).perform()
+        sleep(0.5)
         hour_wheel = self.driver.find_element_by_xpath(
             '//XCUIElementTypeApplication[@name=\"i-daka\"]/XCUIElementTypeWindow[4]/XCUIElementTypeOther/XCUIElementTypeOther/XCUIElementTypeDatePicker/XCUIElementTypeOther/XCUIElementTypePickerWheel[1]')
         hour_wheel.send_keys(get_time_func_hour())
         minute_wheel = self.driver.find_element_by_xpath(
             '//XCUIElementTypeApplication[@name=\"i-daka\"]/XCUIElementTypeWindow[4]/XCUIElementTypeOther/XCUIElementTypeOther/XCUIElementTypeDatePicker/XCUIElementTypeOther/XCUIElementTypePickerWheel[2]')
         minute_wheel.send_keys(get_time_func_min())
+        sleep(0.5)
         # 完成選時間
-        self.driver.find_element_by_accessibility_id("完成").click()
-        # 打卡
-        self.driver.find_element_by_accessibility_id("打卡").click()
+        finish_time_btn_loc = self.get_punch_view_location('finish_time', LocateType.ACCESSIBILITY_ID, '完成')
+        TouchAction(self.driver).tap(x=finish_time_btn_loc[0] + 5,
+                                     y=finish_time_btn_loc[1] + 5).perform()
+        sleep(0.5)
+        punch_btn_loc = self.get_punch_view_location('punch', LocateType.ACCESSIBILITY_ID, '打卡')
+        TouchAction(self.driver).tap(x=punch_btn_loc[0] + 5,
+                                     y=punch_btn_loc[1] + 5).perform()
         # Alert 確定
-        #self.handle_non_workday_alert()
-        self.driver.find_element_by_accessibility_id("確定").click()
+        self.handle_alert(3)
         # 回前頁
-        self.driver.find_element_by_accessibility_id("Back").click()
+        sleep(0.5)
+        back_btn_loc = self.get_punch_view_location('back', LocateType.ACCESSIBILITY_ID, 'Back')
+        TouchAction(self.driver).tap(x=back_btn_loc[0] + 5,
+                                     y=back_btn_loc[1] + 5).perform()
 
+    def get_punch_view_location(self, field_name, type, locator):
+        if field_name not in self.punch_view_loc:
+            if type == LocateType.XPATH:
+                element = self.driver.find_element_by_xpath(locator)
+            elif type == LocateType.ACCESSIBILITY_ID:
+                element = self.driver.find_element_by_accessibility_id(locator)
+            else:
+                raise Exception("Unsupported locate type")
+            self.punch_view_loc[field_name] = (element.location['x'], element.location['y'])
+        return self.punch_view_loc[field_name]
 
     def get_punch_in_time_hour(self):
         return '09'
