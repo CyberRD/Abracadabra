@@ -98,7 +98,7 @@ class FlowAgent(object):
         for year in reversed(range(start_date.year, end_date.year + 1)):
             start_month = start_date.month if year == start_date.year else 1
             end_month = end_date.month if year == end_date.year else 12
-            for month in reversed(range(start_month, end_month)):
+            for month in reversed(range(start_month, end_month + 1)):
                 if year == end_date.year and month == end_date.month:
                     end_day = end_date.day
                 else:
@@ -140,8 +140,8 @@ if __name__ == '__main__':
         'device': 'ios',
         'user_name': 'Mock',
         'user_pwd': 'mock',
-        'start_date': '2018-03-05',
-        'end_date': '2018-03-08'
+        'start_date': '2018-02-01',
+        'end_date': '2018-03-01'
     })
 
     agent.run_daka()
