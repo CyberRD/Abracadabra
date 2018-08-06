@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 from appium import webdriver
+from datetime import datetime
 
 class AndriodDevice(object):
 
@@ -38,7 +39,7 @@ class AndriodDevice(object):
 
     def handle_non_workday_alert(self):
         print('handle_non_workday_alert')
-        ok = sel.driver.find_element_by_id('com.cybersoft.had:id/md_buttonDefaultPositive')
+        ok = self.driver.find_element_by_id('com.cybersoft.had:id/md_buttonDefaultPositive')
         ok.click()
 
 
@@ -84,21 +85,32 @@ class AndriodDevice(object):
         while True:
             calender_index += 1
             date_xpath = get_date_xpath(calender_index)
-            first_day = driver.find_element_by_xpath(date_xpath)
+            first_day = self.driver.find_element_by_xpath(date_xpath)
             if first_day.text == '1':
                 first_day_index = calender_index
                 break
         target_day_index = first_day_index + day - 1
         return get_date_xpath(target_day_index)
 
-    def click_on_work():
-        sign_in = driver.find_element_by_id('com.cybersoft.had:id/btnOn')
+    def click_on_work(self):
+        sign_in = self.driver.find_element_by_id('com.cybersoft.had:id/btnOn')
         sign_in.click()
 
 
-    def click_off_work():
-        sign_in = driver.find_element_by_id('com.cybersoft.had:id/btnOff')
+    def click_off_work(self):
+        sign_in = self.driver.find_element_by_id('com.cybersoft.had:id/btnOff')
         sign_in.click()
+
+    def switch_calendar_to_end_month(self, target_month):
+        #month = driver.find_element_by_id('com.cybersoft.had:id/tvMonth')
+        #month_year = datetime.strptime(month.text, "%B, %Y")
+        current_month = datetime.now().month
+        month_diff = current_month - target_month
+        last_page = self.driver.find_element_by_id('com.cybersoft.had:id/ibPrev')
+        for i in range(month_diff):
+            last_page.click()
+
+
 
 class AndriodDriver(object):
 
