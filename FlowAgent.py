@@ -3,8 +3,15 @@ import logging
 from datetime import datetime
 from time import sleep
 import calendar
+from random import randint
 
-DATE_FORMAT=''
+from selenium.common import exceptions
+
+from Device.MockDevice import MockDevice as Device
+
+logging.basicConfig(level=logging.DEBUG)
+
+DATE_FORMAT='%Y-%m-%d'
 
 
 class FlowAgent(object):
@@ -13,10 +20,10 @@ class FlowAgent(object):
         self._profile = profile
 
         if self._profile.get('device') == 'ios':
-            self.device = ios_agent
+            # self.device = ios_agent
             self._ios = True
         else:
-            self.device = android_agent
+            self.device = Device()
             self._android = True
 
     def run_daka(self):
@@ -40,26 +47,29 @@ class FlowAgent(object):
                 try:
                     # Choose date
                     self.device.driver.find_element_by_xpath(
-                        # '//XCUIElementTypeStaticText[@name="%d"]' % day).click()
-                        self.device.loc.get(day)).click()
+                        '//XCUIElementTypeStaticText[@name="%d"]' % day).click()
+                        # self.device.loc.get(day)).click()
+
                     # 上班
                     self.device.driver.find_element_by_xpath(
                         '//XCUIElementTypeOther[@name="calendar"]/following-sibling::XCUIElementTypeButton[1]').click()
+                    self.device.punch(self.get_punch_in_time_hour, self.get_punch_in_time_minute)
+
                     # 非上班日 alert
                     sleep(0.5)
-                    self.handle_non_workday_alert()
+                    self.device.handle_non_workday_alert()
 
-                    self.punch(self.get_punch_in_time_hour, self.get_punch_in_time_minute)
                     # 下班
                     self.device.driver.find_element_by_xpath(
                         '//XCUIElementTypeOther[@name="calendar"]/following-sibling::XCUIElementTypeButton[2]').click()
 
-                    self.punch(self.get_punch_off_time_hour, self.get_punch_off_time_minute)
+                    self.device.punch(self.get_punch_off_time_hour, self.get_punch_off_time_minute)
+
                 except exceptions.NoSuchElementException:
                     print("Some element not found when %d/%d/%d" % (datetime_data['year'], datetime_data['month'], day))
 
             sleep(2)
-            self.switch_calendar_to_last_month()
+            self.device.switch_calendar_to_last_month()
             # punch all days start working time
             # punch all days end working time
             # self._device.select_previous_month()
@@ -76,9 +86,11 @@ class FlowAgent(object):
         now = datetime.now()
         # if now <= datetime(self.END_YEAR, self.END_MONTH, self.END_DAY):
         if now <= end_date:
-            end_date.year = now.year
-            end_date.month = now.month
-            end_date.day = now.day - 1 # Notice: 減一因為現在懶得處理今天還沒到下班時間不能打卡的狀況
+            # end_date.year = now.year
+            # end_date.month = now.month
+            # end_date.day = now.day - 1 # Notice: 減一因為現在懶得處理今天還沒到下班時間不能打卡的狀況
+            end_date = now
+            logging.debug(end_date)
         if now < start_date or start_date > end_date:
             raise Exception('Invalid datetime setting')
 
@@ -89,7 +101,9 @@ class FlowAgent(object):
                     continue
                 if year == start_date.year and month < start_date.month:
                     break
-                valid_duration.append({'year': year, 'month': month, 'day': FlowAgent._compute_day_num(year, month)})
+                valid_duration.append({'year': year,
+                                       'month': month,
+                                       'day': FlowAgent._compute_day_num(year, month, end_date)})
 
         return valid_duration
 
@@ -98,3 +112,28 @@ class FlowAgent(object):
         if month == end_date.month:
             return end_date.day
         return calendar.monthrange(year, month)[1]
+
+    def get_punch_in_time_hour(self):
+        return '09'
+
+    def get_punch_in_time_minute(self):
+        return str(randint(0, 30)).rjust(2, '0')
+
+    def get_punch_off_time_hour(self):
+        return '18'
+
+    def get_punch_off_time_minute(self):
+        return str(randint(30, 59))
+
+
+if __name__ == '__main__':
+
+    agent = FlowAgent({
+        'device': 'Android',
+        'user_name': 'Mock',
+        'user_pwd': 'mock',
+        'start_date': '2018-08-05',
+        'end_date': '2018-08-07'
+    })
+
+    agent.run_daka()
