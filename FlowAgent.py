@@ -38,7 +38,8 @@ class FlowAgent(object):
             self.device.login(user_name, user_pwd)
         self.device.click_calendar()
 
-        valid_duration = self._get_valid_duration(start_date, end_date)
+        # valid_duration = self._get_valid_duration(start_date, end_date)
+        self.device.switch_calendar_to_end_month()
 
         for datetime_data in FlowAgent._get_valid_duration(start_date, end_date):
             for day in range(1, datetime_data['day'] + 1):
@@ -46,22 +47,19 @@ class FlowAgent(object):
 
                 try:
                     # Choose date
-                    self.device.driver.find_element_by_xpath(
-                        '//XCUIElementTypeStaticText[@name="%d"]' % day).click()
-                        # self.device.loc.get(day)).click()
+                    self.device.choose_date_from_calendar(day)
 
                     # 上班
-                    self.device.driver.find_element_by_xpath(
-                        '//XCUIElementTypeOther[@name="calendar"]/following-sibling::XCUIElementTypeButton[1]').click()
+                    self.device.click_on_work()
                     self.device.punch(self.get_punch_in_time_hour, self.get_punch_in_time_minute)
+                    self.device.back_page()
 
                     # 非上班日 alert
                     sleep(0.5)
                     self.device.handle_non_workday_alert()
 
                     # 下班
-                    self.device.driver.find_element_by_xpath(
-                        '//XCUIElementTypeOther[@name="calendar"]/following-sibling::XCUIElementTypeButton[2]').click()
+                    self.device.click_off_work()
 
                     self.device.punch(self.get_punch_off_time_hour, self.get_punch_off_time_minute)
 
@@ -69,7 +67,7 @@ class FlowAgent(object):
                     print("Some element not found when %d/%d/%d" % (datetime_data['year'], datetime_data['month'], day))
 
             sleep(2)
-            self.device.switch_calendar_to_last_month()
+            self.device.switch_calendar_to_previous_month()
             # punch all days start working time
             # punch all days end working time
             # self._device.select_previous_month()

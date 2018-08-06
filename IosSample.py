@@ -8,6 +8,7 @@ from time import sleep
 from appium.webdriver.common.touch_action import TouchAction
 from selenium.common import exceptions
 
+
 class AbrakadabraTests(unittest.TestCase):
     START_YEAR = 2018 # TODO: Should read start and end date from config and parse them separately
     START_MONTH = 1

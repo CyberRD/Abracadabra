@@ -21,13 +21,24 @@ class MockDevice(object):
 
     def punch(self, hour, minute):
         print(hour, minute)
-        self.back_page()
 
-    def switch_calendar_to_last_month(self):
+    def click_on_work(self):
+        print('click on work')
+
+    def click_off_work(self):
+        print('click_off_work')
+
+    def switch_calendar_to_previous_month(self):
         print('switch_calendar_to_last_month')
+
+    def switch_calendar_to_end_month(self):
+        print('switch_calendar_to_end_month')
 
     def back_page(self):
         print('back')
+
+    def choose_date_from_calendar(self, day):
+        pass
 
 
 class MockDriver(object):
