@@ -8,7 +8,7 @@ from random import randint
 from selenium.common import exceptions
 
 from Device.MockDevice import MockDevice as Device
-from Device.Ios import IosDevice as Device
+from Device.Ios import IosDevice
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -23,7 +23,7 @@ class FlowAgent(object):
         self._android = False
 
         if self._profile.get('device') == 'ios':
-            self.device = Device()
+            self.device = IosDevice()
             self._ios = True
         else:
             self.device = Device()
