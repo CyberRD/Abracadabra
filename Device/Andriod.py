@@ -43,7 +43,7 @@ class AndriodDevice(object):
     def handle_non_workday_alert(self):
         print('handle_non_workday_alert')
         try:
-            self.driver.find_element_by_id('com.cybersoft.had:id/md_buttonDefaultPositive')
+            ok = self.driver.find_element_by_id('com.cybersoft.had:id/md_buttonDefaultPositive')
             ok.click()
         except:
             pass
