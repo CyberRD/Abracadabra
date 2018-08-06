@@ -91,12 +91,12 @@ class AndriodDevice(object):
         target_day_index = first_day_index + day - 1
         return get_date_xpath(target_day_index)
 
-    def go_to_work_page():
+    def click_on_work():
         sign_in = driver.find_element_by_id('com.cybersoft.had:id/btnOn')
         sign_in.click()
 
 
-    def get_off_work_page():
+    def click_off_work():
         sign_in = driver.find_element_by_id('com.cybersoft.had:id/btnOff')
         sign_in.click()
 

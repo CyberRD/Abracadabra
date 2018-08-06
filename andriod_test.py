@@ -51,11 +51,11 @@ def switch_month(target_date):
     for i in range(month_diff):
         pre_page.click()
 
-def go_to_work_page():
+def click_on_work():
     sign_in = driver.find_element_by_id('com.cybersoft.had:id/btnOn')
     sign_in.click()
 
-def get_off_work_page():
+def click_off_work():
     sign_in = driver.find_element_by_id('com.cybersoft.had:id/btnOff')
     sign_in.click()
 
